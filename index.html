@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Kuis Matematika</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #f4f3ee; color: #2c2c2a;
+    display: flex; justify-content: center; padding: 24px 16px; margin: 0;
+  }
+  .wrap { width: 100%; max-width: 520px; }
+  .bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-size:14px; }
+  .card { background:#fff; border:1px solid #d3d1c7; border-radius:12px; padding:18px; margin-bottom:12px; }
+  h1 { text-align:center; margin:0 0 12px; font-size:18px; }
+  #question { font-size:26px; font-weight:600; text-align:center; margin:8px 0; }
+  input[type="number"]{
+    width:100%; text-align:center; font-size:18px; padding:10px; border:1px solid #b4b2a9; border-radius:8px;
+  }
+  input[type="number"]:focus{ outline:2px solid #185fa5; border-color:#185fa5; }
+  #error { font-size:13px; color:#a32d2d; margin:8px 0 0; display:none; text-align:center; }
+  .btnrow { display:flex; gap:8px; margin-top:12px; }
+  button { flex:1; padding:12px; font-size:15px; border-radius:8px; border:1px solid #b4b2a9; background:#fff; cursor:pointer; }
+  button:hover{ background:#f1efe8; }
+  #submitBtn{ background:#185fa5; color:#fff; border-color:#185fa5; }
+  #submitBtn:hover{ background:#0c447c; }
+  .resultbox{ background:#f1efe8; border-radius:8px; padding:14px; text-align:center; margin-bottom:12px; }
+  .resultbox p { margin:0; }
+  .row{ display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #e3e1d8; font-size:14px; }
+  .ok{ color:#27500a; font-weight:600; } .no{ color:#791f1f; font-weight:600; } .given{ color:#5f5e5a; }
+  .config { display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+  select, input[type="number"].small { padding:8px; border-radius:6px; border:1px solid #b4b2a9; }
+  .small { width:100px; text-align:center; }
+  footer { margin-top:8px; font-size:13px; color:#5f5e5a; text-align:center; }
+  @media (max-width:420px){ #question{font-size:20px} }
+</style>
+</head>
+<body>
+  <div class="wrap" role="application" aria-labelledby="title">
+    <h1 id="title">Kuis Matematika</h1>
+
+    <div class="bar">
+      <span id="progress" aria-live="polite">Soal 0/10</span>
+      <span id="timer" aria-live="polite">01:30</span>
+    </div>
+
+    <div class="card" id="setupCard">
+      <div class="config">
+        <label for="opSelect">Operasi:</label>
+        <select id="opSelect" aria-label="Pilih operasi">
+          <option value="mixed">Campur (+ − × ÷)</option>
+          <option value="+">Penjumlahan (+)</option>
+          <option value="-">Pengurangan (−)</option>
+          <option value="*">Perkalian (×)</option>
+          <option value="/">Pembagian (÷)</option>
+        </select>
+
+        <label for="rangeMin">Min:</label>
+        <input id="rangeMin" class="small" type="number" value="-20" aria-label="nilai minimum" />
+
+        <label for="rangeMax">Max:</label>
+        <input id="rangeMax" class="small" type="number" value="20" aria-label="nilai maksimum" />
+
+        <label for="qCount">Jumlah soal:</label>
+        <input id="qCount" class="small" type="number" value="10" min="1" max="50" aria-label="jumlah soal" />
+      </div>
+
+      <div style="margin-top:8px; display:flex; gap:8px;">
+        <button id="startBtn">Mulai kuis</button>
+        <button id="resetBestBtn">Reset skor terbaik</button>
+      </div>
+
+      <div style="margin-top:10px; font-size:13px; color:#5f5e5a;">
+        Skor terbaik: <span id="bestScore">-</span>
+      </div>
+    </div>
+
+    <div id="quiz-area" style="display:none;">
+      <div class="card" aria-live="polite">
+        <p id="question">-</p>
+        <label for="answer" style="display:none">Jawaban</label>
+        <input type="number" id="answer" placeholder="Jawabanmu" aria-label="Jawabanmu" />
+        <p id="error">Isi jawaban dulu</p>
+      </div>
+
+      <div class="btnrow">
+        <button id="submitBtn">Jawab</button>
+        <button id="skipBtn">Lewati</button>
+        <button id="quitBtn">Selesai</button>
+      </div>
+    </div>
+
+    <div id="result-area" style="display:none;">
+      <div class="resultbox">
+        <p>Skor akhir</p>
+        <p id="finalScore">0/0</p>
+        <p id="bestAfter" style="font-size:13px; margin-top:6px;"></p>
+      </div>
+      <div id="reviewList" class="card" style="padding:8px;"></div>
+
+      <div class="btnrow" style="margin-top:12px;">
+        <button id="restartBtn">Ulangi kuis</button>
+        <button id="againSetupBtn">Ke pengaturan</button>
+      </div>
+    </div>
+
+    <footer>Tekan Enter untuk menjawab. Pembagian menghasilkan bilangan bulat.</footer>
+  </div>
+
+<script>
+/* ------- Utilities ------- */
+function randInt(min, max){
+  min = Math.ceil(min); max = Math.floor(max);
+  return Math.floor(Math.random()*(max-min+1)) + min;
+}
+function fmtTime(s){
+  var m=Math.floor(s/60), sec=s%60;
+  return (m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;
+}
+
+/* ------- Question generation ------- */
+function makeOperand(rangeMin, rangeMax, allowZero){
+  var v;
+  do { v = randInt(rangeMin, rangeMax); } while(!allowZero && v===0);
+  return v;
+}
+
+function genOne(opMode, rangeMin, rangeMax){
+  // returns {text, ans}
+  var op = opMode;
+  if(opMode === 'mixed'){ var arr=['+','-','*','/']; op = arr[randInt(0,arr.length-1)]; }
+
+  // ensure division yields integer result
+  if(op === '/'){
+    // pick divisor and quotient, then multiply -> dividend
+    var divisor = makeOperand(Math.max(1,rangeMin), Math.max(1,rangeMax), false);
+    // allow negative divisor and quotient for variety:
+    if(Math.random()<0.5) divisor = -divisor;
+    var quotient = makeOperand(Math.max(1,Math.abs(rangeMin)), Math.max(1,Math.abs(rangeMax)), false);
+    if(Math.random()<0.5) quotient = -quotient;
+    var dividend = divisor * quotient;
+    // but dividend must be within range; if not, adjust iteratively
+    var attempts = 0;
+    while((dividend < rangeMin || dividend > rangeMax) && attempts < 20){
+      divisor = makeOperand(Math.max(1,rangeMin), Math.max(1,rangeMax), false);
+      if(Math.random()<0.5) divisor = -divisor;
+      quotient = makeOperand(Math.max(1,Math.abs(rangeMin)), Math.max(1,Math.abs(rangeMax)), false);
+      if(Math.random()<0.5) quotient = -quotient;
+      dividend = divisor * quotient;
+      attempts++;
+    }
+    return {text: dividend + ' ÷ (' + divisor + ')', ans: quotient};
+  }
+
+  var a = makeOperand(rangeMin, rangeMax, true);
+  var b = makeOperand(rangeMin, rangeMax, true);
+
+  var text = a + ' ' + (op==='*' ? '×' : op) + ' (' + b + ')';
+  var ans;
+  if(op === '+') ans = a + b;
+  if(op === '-') ans = a - b;
+  if(op === '*') ans = a * b;
+  return {text: text, ans: ans};
+}
+
+function genQuestions(count, opMode, rangeMin, rangeMax){
+  var qs = [];
+  for(var i=0;i<count;i++){
+    qs.push(genOne(opMode, rangeMin, rangeMax));
+  }
+  return qs;
+}
+
+/* ------- State ------- */
+var questions = [], idx = 0, score = 0, answers = [];
+var timeLeft = 90, timerInterval = null, finished = false, timerStarted = false;
+
+/* ------- Elements ------- */
+var qEl = document.getElementById('question');
+var aEl = document.getElementById('answer');
+var errEl = document.getElementById('error');
+var progEl = document.getElementById('progress');
+var timerEl = document.getElementById('timer');
+var quizArea = document.getElementById('quiz-area');
+var resultArea = document.getElementById('result-area');
+var reviewList = document.getElementById('reviewList');
+var finalScoreEl = document.getElementById('finalScore');
+var bestScoreEl = document.getElementById('bestScore');
+var bestAfterEl = document.getElementById('bestAfter');
+
+function loadBest(){
+  var key = 'kuis-matematika-best';
+  var v = localStorage.getItem(key);
+  if(v===null) { bestScoreEl.textContent = '-'; return; }
+  bestScoreEl.textContent = v;
+}
+function saveBest(s, total){
+  var key = 'kuis-matematika-best';
+  var curr = localStorage.getItem(key);
+  var now = s + '/' + total;
+  if(!curr || compareScore(now, curr) > 0){
+    localStorage.setItem(key, now);
+    return true;
+  }
+  return false;
+}
+function compareScore(a, b){
+  // compare "X/Y" by percent
+  var pa = a.split('/'); var pb = b.split('/');
+  var ra = parseFloat(pa[0])/parseFloat(pa[1]);
+  var rb = parseFloat(pb[0])/parseFloat(pb[1]);
+  if(ra>rb) return 1; if(ra<rb) return -1; return 0;
+}
+
+/* ------- Timer ------- */
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+  timerInterval = setInterval(function(){
+    timeLeft--;
+    timerEl.textContent = fmtTime(timeLeft);
+    if(timeLeft<=20) timerEl.style.color = '#a32d2d';
+    if(timeLeft<=0){ clearInterval(timerInterval); finishQuiz(); }
+  },1000);
+}
+
+/* ------- Render ------- */
+function renderQ(){
+  var q = questions[idx];
+  qEl.textContent = q.text + ' = ?';
+  progEl.textContent = 'Soal ' + (idx+1) + '/' + questions.length;
+  aEl.value = '';
+  errEl.style.display = 'none';
+  aEl.focus();
+}
+
+function finishQuiz(){
+  if(finished) return;
+  finished = true;
+  clearInterval(timerInterval);
+  quizArea.style.display = 'none';
+  resultArea.style.display = 'block';
+  finalScoreEl.textContent = score + '/' + questions.length;
+  var improved = saveBest(score, questions.length);
+  bestAfterEl.textContent = improved ? 'Selamat! Ini skor terbaik baru.' : '';
+  loadBest();
+
+  // build review
+  var html = '';
+  for(var i=0;i<answers.length;i++){
+    var a = answers[i];
+    var cls = a.correct ? 'ok' : 'no';
+    var mark = a.correct ? '✓' : '✗';
+    html += '<div class="row"><span>' + a.q + ' = ' + a.ans + '</span>' +
+      '<span><span class="' + cls + '">' + mark + '</span> <span class="given">' + a.given + '</span></span></div>';
+  }
+  reviewList.innerHTML = html;
+}
+
+/* ------- Actions ------- */
+document.getElementById('startBtn').addEventListener('click', function(){
+  // read settings
+  var op = document.getElementById('opSelect').value;
+  var min = parseInt(document.getElementById('rangeMin').value,10);
+  var max = parseInt(document.getElementById('rangeMax').value,10);
+  var qc = parseInt(document.getElementById('qCount').value,10) || 10;
+  if(min > max){ alert('Nilai Min harus <= Max'); return; }
+  // init
+  questions = genQuestions(qc, op, min, max);
+  idx = 0; score = 0; answers = []; finished = false;
+  timeLeft = 90; timerStarted = false; clearInterval(timerInterval);
+  timerEl.style.color = '#2c2c2a'; timerEl.textContent = fmtTime(timeLeft);
+  document.getElementById('setupCard').style.display = 'none';
+  quizArea.style.display = 'block';
+  resultArea.style.display = 'none';
+  renderQ();
+});
+
+document.getElementById('submitBtn').addEventListener('click', function(){
+  if(finished) return;
+  var v = aEl.value;
+  if(v === ''){
+    errEl.style.display = 'block'; return;
+  }
+  // start timer when first answer is submitted
+  startTimer();
+  var numeric = Number(v);
+  // Accept small floating errors for division (but we produce integer division answers)
+  var correct = numeric === questions[idx].ans;
+  if(correct) score++;
+  answers.push({q: questions[idx].text, given: v, correct: correct, ans: questions[idx].ans});
+  if(idx < questions.length-1){ idx++; renderQ(); } else { finishQuiz(); }
+});
+
+document.getElementById('skipBtn').addEventListener('click', function(){
+  if(finished) return;
+  startTimer();
+  answers.push({q: questions[idx].text, given: '(lewat)', correct: false, ans: questions[idx].ans});
+  if(idx < questions.length-1){ idx++; renderQ(); } else { finishQuiz(); }
+});
+
+document.getElementById('quitBtn').addEventListener('click', function(){
+  if(confirm('Yakin ingin mengakhiri kuis?')) finishQuiz();
+});
+
+document.getElementById('restartBtn').addEventListener('click', function(){
+  // restart with same settings: go to setup hidden? just regenerate same settings
+  document.getElementById('setupCard').style.display = 'none';
+  quizArea.style.display = 'block';
+  resultArea.style.display = 'none';
+  idx = 0; score = 0; answers = []; finished = false;
+  timeLeft = 90; timerStarted = false; clearInterval(timerInterval);
+  timerEl.style.color = '#2c2c2a'; timerEl.textContent = fmtTime(timeLeft);
+  // regenerate questions with previous settings stored in the DOM if available:
+  var op = document.getElementById('opSelect').value;
+  var min = parseInt(document.getElementById('rangeMin').value,10);
+  var max = parseInt(document.getElementById('rangeMax').value,10);
+  var qc = parseInt(document.getElementById('qCount').value,10) || 10;
+  questions = genQuestions(qc, op, min, max);
+  renderQ();
+});
+
+document.getElementById('againSetupBtn').addEventListener('click', function(){
+  document.getElementById('setupCard').style.display = 'block';
+  quizArea.style.display = 'none';
+  resultArea.style.display = 'none';
+  clearInterval(timerInterval);
+  timerStarted = false;
+  timerEl.textContent = fmtTime(90);
+  timerEl.style.color = '#2c2c2a';
+});
+
+document.getElementById('resetBestBtn').addEventListener('click', function(){
+  if(confirm('Reset skor terbaik?')){
+    localStorage.removeItem('kuis-matematika-best');
+    loadBest();
+  }
+});
+
+/* keyboard enter */
+aEl.addEventListener('keydown', function(e){
+  if(e.key === 'Enter'){ document.getElementById('submitBtn').click(); }
+});
+
+/* load best on init */
+loadBest();
+</script>
+</body>
+</html>
