@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Latihan Penalaran Kuantitatif</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--tx:#1d1d1b;--mut:#6b6a63;--bd:#dcdad0;--ac:#1f5f8b;--ok:#1e7a46;--okb:#e0f2e8;--no:#b3261e;--nob:#fbe4e2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161615;--card:#222221;--tx:#ecebe5;--mut:#a3a199;--bd:#3a3936;--ac:#6db3e0;--ok:#6fd199;--okb:#173a27;--no:#ff8d85;--nob:#451e1b}}
+:root[data-theme="dark"]{--bg:#161615;--card:#222221;--tx:#ecebe5;--mut:#a3a199;--bd:#3a3936;--ac:#6db3e0;--ok:#6fd199;--okb:#173a27;--no:#ff8d85;--nob:#451e1b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:4px 0}
+.sub{color:var(--mut);font-size:14px;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+.q{margin:0 0 10px;font-weight:600}
+.opt{display:block;width:100%;text-align:left;background:transparent;color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin:6px 0;font:inherit;cursor:pointer}
+.opt.ok{background:var(--okb);border-color:var(--ok)}
+.opt.no{background:var(--nob);border-color:var(--no)}
+.opt:disabled{cursor:default}
+.why{display:none;margin-top:8px;padding:10px;border-left:3px solid var(--ac);font-size:14px}
+.row{display:flex;gap:8px;margin-top:8px;align-items:center}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;cursor:pointer}
+.btn.alt{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+#score{color:var(--mut);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>Latihan Penalaran Kuantitatif</h1>
+<p class="sub">Level dasar. Angka dan topik diacak. Topik terungkap setelah menjawab.</p>
+<div class="row"><button class="btn" id="all">Acak 2 soal baru</button><span id="score"></span></div>
+<div style="height:12px"></div>
+<div id="s0"></div><div id="s1"></div>
+</main>
+<script>
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[rnd(0,a.length-1)];
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+const rp=n=>"Rp"+n.toLocaleString("id-ID");
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rnd(0,i);[a[i],a[j]]=[a[j],a[i]]}return a}
+function build(c,ds,fill,fmt){
+  const s=[c];
+  for(const d of ds){if(d>0&&!s.includes(d))s.push(d)}
+  let k=1;
+  while(s.length<5){for(const v of [c+k*fill,c-k*fill]){if(s.length<5&&v>0&&!s.includes(v))s.push(v)}k++}
+  const o=shuffle(s.slice(0,5));
+  return {opts:o.map(fmt),ans:o.indexOf(c)};
+}
+const G={
+"Barisan aritmetika":()=>{
+  const d=rnd(2,7),a=rnd(1,10),U3=a+2*d,U7=a+6*d,U10=a+9*d;
+  return {...build(U10,[U10+d,U10-d,U7+3,U10+2*d],d,String),q:`Barisan aritmetika memiliki U₃ = ${U3} dan U₇ = ${U7}. Nilai U₁₀ adalah ...`,
+  why:`Beda = (${U7} − ${U3}) ÷ 4 = ${d}. U₁₀ = U₇ + 3 × ${d} = ${U10}.`};
+},
+"Peluang":()=>{
+  const S=rnd(4,10),c=6-Math.abs(S-7);
+  return {...build(c,[c-1,c+1,c+2,c*2],1,n=>{const g=gcd(n,36);return (n/g)+"/"+(36/g)}),q:`Dua dadu dilempar bersamaan. Peluang jumlah mata dadu ${S} adalah ...`,
+  why:`Pasangan berjumlah ${S}: ${c}. Ruang sampel: 36. Peluang = ${c}/36.`};
+},
+"Aljabar":()=>{
+  const x=rnd(2,9),a=rnd(2,5),b=rnd(1,9),c=a*x+b,m=rnd(2,4),n=rnd(1,5),r=m*x-n;
+  return {...build(r,[m*x+n,x,m*c,r+m],1,String),q:`Jika ${a}x + ${b} = ${c}, nilai ${m}x − ${n} adalah ...`,
+  why:`${a}x = ${c} − ${b} = ${c-b}, maka x = ${x}. ${m}(${x}) − ${n} = ${r}.`};
+},
+"Perbandingan":()=>{
+  const a=rnd(2,6),b=a+rnd(1,4),k=rnd(2,5),c=a*k,x=b*k;
+  return {...build(x,[c+b-a,b+k,x+k,x-k],k,String),q:`Jika ${a} : ${b} = ${c} : x, nilai x adalah ...`,
+  why:`${c} = ${a} × ${k}, maka x = ${b} × ${k} = ${x}. Selisih tidak dipakai, yang dipakai pengali.`};
+},
+"Statistika":()=>{
+  let d,s;do{d=Array.from({length:5},()=>rnd(3,15));s=d.reduce((p,q)=>p+q,0)}while(s%5);
+  const m=s/5,med=[...d].sort((p,q)=>p-q)[2];
+  return {...build(m,[med,m+1,m-1,Math.max(...d)-Math.min(...d)],1,String),q:`Rata-rata dari data ${d.join(", ")} adalah ...`,
+  why:`Jumlah = ${s}. Banyak data = 5. Rata-rata = ${s} ÷ 5 = ${m}. Median (${med}) bukan rata-rata.`};
+},
+"Diskon bertingkat":()=>{
+  const P=rnd(2,10)*50000,d1=pick([10,20,25,30]),d2=pick([10,20]);
+  const f=Math.round(P*(100-d1)*(100-d2)/10000);
+  return {...build(f,[P*(100-d1-d2)/100,P*(100-d1)/100,P*(100-d2)/100,f+P/20],5000,rp),q:`Harga sebuah barang ${rp(P)}. Diskon ${d1}%, lalu diskon tambahan ${d2}% dari harga setelah diskon pertama. Harga akhir adalah ...`,
+  why:`${rp(P)} × ${100-d1}% × ${100-d2}% = ${rp(f)}. Diskon bertingkat tidak dijumlahkan.`};
+},
+"Kecepatan rata-rata":()=>{
+  let v1,t1,v2,t2,avg;
+  do{v1=pick([40,60,80,90]);t1=pick([1,2,3]);v2=pick([30,50,60,70]);t2=pick([1,2]);
+  avg=(v1*t1+v2*t2)/(t1+t2)}while(!Number.isInteger(avg)||avg===(v1+v2)/2);
+  return {...build(avg,[(v1+v2)/2,avg+5,avg-5,avg+10],2,n=>n+" km/jam"),q:`Mobil melaju ${v1} km/jam selama ${t1} jam, lalu ${v2} km/jam selama ${t2} jam. Kecepatan rata-rata seluruh perjalanan adalah ...`,
+  why:`Jarak total = ${v1*t1+v2*t2} km. Waktu total = ${t1+t2} jam. Rata-rata = ${avg} km/jam. Rata-rata sederhana (${(v1+v2)/2}) salah.`};
+},
+"Aljabar (cerita)":()=>{
+  const p=rnd(2,6)*1000,bk=rnd(3,8)*1000,n=rnd(2,4),m=rnd(2,4),T=n*p+bk,r=m*bk;
+  return {...build(r,[bk,r+p,r-bk,T],1000,rp),q:`Budi membeli ${n} pensil dan 1 buku seharga ${rp(T)}. Jika harga satu pensil ${rp(p)}, harga ${m} buku adalah ...`,
+  why:`Harga buku = ${rp(T)} − ${n} × ${rp(p)} = ${rp(bk)}. ${m} buku = ${rp(r)}.`};
+},
+"Perbandingan (cerita)":()=>{
+  const a=rnd(1,4),b=a+rnd(1,3),u=rnd(5,20)*1000,T=(a+b)*u,r=b*u;
+  return {...build(r,[a*u,T/2,r+u,r-u],1000,rp),q:`Uang ${rp(T)} dibagi untuk Ani dan Beni dengan perbandingan ${a} : ${b}. Bagian Beni adalah ...`,
+  why:`Jumlah bagian = ${a+b}. Satu bagian = ${rp(u)}. Beni = ${b} × ${rp(u)} = ${rp(r)}.`};
+},
+"Rata-rata nilai":()=>{
+  const n=rnd(4,7),m=rnd(60,75),r=rnd(1,3),y=m+(n+1)*r,avg=m+r;
+  return {...build(avg,[Math.round((m+y)/2),avg+1,avg-1,y],1,String),q:`Rata-rata nilai ${n} ujian adalah ${m}. Setelah ujian ke-${n+1}, rata-rata menjadi ... jika nilai ujian terakhir ${y}.`,
+  why:`Jumlah awal = ${n*m}. Jumlah baru = ${n*m+y}. Rata-rata baru = ${n*m+y} ÷ ${n+1} = ${avg}.`};
+}};
+const POOL=["Barisan aritmetika","Peluang","Aljabar","Perbandingan","Statistika"];
+const cur=[null,null];
+let right=0,total=0;
+const L="ABCDE";
+function render(i,avoid){
+  const el=document.getElementById("s"+i);
+  const opts=POOL.filter(t=>t!==avoid);
+  const topic=pick(opts);cur[i]=topic;
+  const p=G[topic]();
+  el.className="card";
+  el.innerHTML=`<p class="q"></p><div class="os"></div><div class="why"></div><div class="row"><button class="btn alt">Soal baru</button></div>`;
+  el.querySelector(".q").textContent=p.q;
+  const os=el.querySelector(".os"),why=el.querySelector(".why");
+  p.opts.forEach((t,j)=>{
+    const b=document.createElement("button");b.className="opt";b.textContent=L[j]+". "+t;
+    b.onclick=()=>{
+      os.querySelectorAll(".opt").forEach((x,k)=>{x.disabled=true;if(k===p.ans)x.classList.add("ok")});
+      if(j!==p.ans)b.classList.add("no");
+      total++;if(j===p.ans)right++;
+      document.getElementById("score").textContent=`Benar ${right} dari ${total}`;
+      why.style.display="block";why.textContent=`Topik: ${topic}. Pembahasan: ${p.why}`;
+    };
+    os.appendChild(b);
+  });
+  el.querySelector(".btn").onclick=()=>render(i,cur[1-i]);
+}
+function both(){render(0,null);render(1,cur[0])}
+document.getElementById("all").onclick=both;
+both();
+</script>
+</body>
+</html>
