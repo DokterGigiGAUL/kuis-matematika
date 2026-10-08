@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bangun Ruang: Penalaran Matematika</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--tx:#1d1d1b;--mut:#6b6a63;--bd:#dcdad0;--ac:#1f5f8b;--ok:#1e7a46;--okb:#e0f2e8;--no:#b3261e;--nob:#fbe4e2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161615;--card:#222221;--tx:#ecebe5;--mut:#a3a199;--bd:#3a3936;--ac:#6db3e0;--ok:#6fd199;--okb:#173a27;--no:#ff8d85;--nob:#451e1b}}
+:root[data-theme="dark"]{--bg:#161615;--card:#222221;--tx:#ecebe5;--mut:#a3a199;--bd:#3a3936;--ac:#6db3e0;--ok:#6fd199;--okb:#173a27;--no:#ff8d85;--nob:#451e1b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:4px 0}
+.sub{color:var(--mut);font-size:14px;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+.q{margin:0 0 10px;font-weight:600}
+.opt{display:block;width:100%;text-align:left;background:transparent;color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin:6px 0;font:inherit;cursor:pointer}
+.opt.ok{background:var(--okb);border-color:var(--ok)}
+.opt.no{background:var(--nob);border-color:var(--no)}
+.opt:disabled{cursor:default}
+.why{display:none;margin-top:8px;padding:10px;border-left:3px solid var(--ac);font-size:14px}
+.row{display:flex;gap:8px;margin-top:8px;align-items:center}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;cursor:pointer}
+.btn.alt{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+#score{color:var(--mut);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>Bangun Ruang: Penalaran Matematika</h1>
+<p class="sub">Soal 1 level 1 (dasar). Soal 2 level 2 (gabungan). Angka dan subtopik diacak.</p>
+<div class="row"><button class="btn" id="all">Acak 2 soal baru</button><span id="score"></span></div>
+<div style="height:12px"></div>
+<div id="s0"></div><div id="s1"></div>
+</main>
+<script>
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[rnd(0,a.length-1)];
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+const rp=n=>"Rp"+n.toLocaleString("id-ID");
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rnd(0,i);[a[i],a[j]]=[a[j],a[i]]}return a}
+function build(c,ds,fill,fmt){
+  const s=[c];
+  for(const d of ds){if(d>0&&!s.includes(d))s.push(d)}
+  let k=1;
+  while(s.length<5){for(const v of [c+k*fill,c-k*fill]){if(s.length<5&&v>0&&!s.includes(v))s.push(v)}k++}
+  const o=shuffle(s.slice(0,5));
+  return {opts:o.map(fmt),ans:o.indexOf(c)};
+}
+const cm3=n=>n+" cm³",cm2=n=>n+" cm²",cm=n=>n+" cm";
+const G={
+"Kubus (luas → volume)":()=>{
+  const s=rnd(2,9),V=s**3;
+  return {...build(V,[s*s,3*s,V+s,2*V],s,cm3),q:`Luas permukaan sebuah kubus ${6*s*s} cm². Volume kubus tersebut adalah ...`,
+  why:`6s² = ${6*s*s}, maka s² = ${s*s} dan s = ${s} cm. Volume = ${s}³ = ${V} cm³.`};
+},
+"Balok (kerangka)":()=>{
+  const p=rnd(3,12),l=rnd(2,8),t=rnd(2,9),r=4*(p+l+t);
+  return {...build(r,[p+l+t,2*(p+l+t),p*l*t,r+4],4,cm),q:`Sebuah balok berukuran ${p} cm × ${l} cm × ${t} cm. Akan dibuat kerangka dari kawat. Panjang kawat yang diperlukan adalah ...`,
+  why:`Balok punya 12 rusuk: 4 panjang, 4 lebar, 4 tinggi. 4 × (${p} + ${l} + ${t}) = ${r} cm.`};
+},
+"Balok (luas permukaan)":()=>{
+  const p=rnd(3,12),l=rnd(2,8),t=rnd(2,9),r=2*(p*l+p*t+l*t);
+  return {...build(r,[p*l*t,p*l+p*t+l*t,2*(p+l+t),r+2*p*l],2,cm2),q:`Sebuah balok berukuran ${p} cm × ${l} cm × ${t} cm. Luas permukaan balok adalah ...`,
+  why:`2(pl + pt + lt) = 2(${p*l} + ${p*t} + ${l*t}) = ${r} cm².`};
+},
+"Tabung (volume)":()=>{
+  const k=rnd(1,3),r=7*k,t=rnd(2,10),V=22*7*k*k*t;
+  return {...build(V,[4*V,Math.round(V/3),2*V,V+22*t],22,cm3),q:`Sebuah tabung berjari-jari ${r} cm dan tinggi ${t} cm. Gunakan π = 22/7. Volume tabung adalah ...`,
+  why:`V = π r² t = 22/7 × ${r}² × ${t} = ${V} cm³.`};
+},
+"Kerucut (volume)":()=>{
+  const k=rnd(1,2),r=7*k,m=rnd(1,4),t=3*m,V=22*7*k*k*m;
+  return {...build(V,[3*V,2*V,Math.round(V/2),V+22*m],22,cm3),q:`Sebuah kerucut berjari-jari ${r} cm dan tinggi ${t} cm. Gunakan π = 22/7. Volume kerucut adalah ...`,
+  why:`V = 1/3 × π r² t = 1/3 × 22/7 × ${r}² × ${t} = ${V} cm³. Jangan lupa faktor 1/3.`};
+},
+"Bola (luas permukaan)":()=>{
+  const k=rnd(1,3),r=7*k,L=616*k*k;
+  return {...build(L,[154*k*k,308*k*k,1232*k*k,L+154*k*k/1],154,cm2),q:`Sebuah bola berjari-jari ${r} cm. Gunakan π = 22/7. Luas permukaan bola adalah ...`,
+  why:`L = 4 π r² = 4 × 22/7 × ${r}² = ${L} cm².`};
+},
+"Limas (volume)":()=>{
+  const s=rnd(3,9),m=rnd(1,4),t=3*m,V=s*s*m;
+  return {...build(V,[s*s*t,Math.round(s*s*t/2),s*t,V+s],s,cm3),q:`Alas sebuah limas berbentuk persegi dengan sisi ${s} cm. Tinggi limas ${t} cm. Volume limas adalah ...`,
+  why:`V = 1/3 × luas alas × tinggi = 1/3 × ${s*s} × ${t} = ${V} cm³.`};
+},
+"Prisma segitiga (volume)":()=>{
+  const a=2*rnd(2,6),ts=rnd(3,8),H=rnd(4,12),V=a*ts/2*H;
+  return {...build(V,[a*ts*H,a*ts/2+H,a*ts+H,V+a],ts,cm3),q:`Alas sebuah prisma berbentuk segitiga dengan alas ${a} cm dan tinggi ${ts} cm. Tinggi prisma ${H} cm. Volume prisma adalah ...`,
+  why:`Luas alas = 1/2 × ${a} × ${ts} = ${a*ts/2} cm². V = ${a*ts/2} × ${H} = ${V} cm³.`};
+}};
+const POOL1=Object.keys(G);
+Object.assign(G,{
+"Air kubus → bak balok":()=>{
+  const a=pick([1,2]),b=pick([2,3]),ab=a*b,s=ab*rnd(2,4),h=s/ab;
+  return {...build(h,[s/a,s/b,s,h+a],1,cm),q:`Sebuah kubus berusuk ${s} cm penuh berisi air. Seluruh air dituang ke bak berbentuk balok dengan alas ${s*a} cm × ${s*b} cm. Tinggi air dalam bak adalah ...`,
+  why:`Volume air = ${s}³ = ${s**3} cm³. Luas alas bak = ${s*a} × ${s*b} = ${s*s*ab} cm². Tinggi = ${s**3} ÷ ${s*s*ab} = ${h} cm.`};
+},
+"Pindah air antartabung":()=>{
+  const n=pick([1,2]),m=n+rnd(1,2),hA=n*n*rnd(2,6),hB=hA*m*m/(n*n);
+  return {...build(hB,[hA*m/n,hA*m,hA*m*m,hB+n*7],1,cm),q:`Tabung A berjari-jari ${7*m} cm berisi air setinggi ${hA} cm. Seluruh air dipindahkan ke tabung B berjari-jari ${7*n} cm. Tinggi air dalam tabung B adalah ...`,
+  why:`Volume air sama. Tinggi B = ${hA} × (${7*m} ÷ ${7*n})² = ${hA} × ${m*m}/${n*n} = ${hB} cm. Jari-jari dikuadratkan, bukan hanya dibagi.`};
+},
+"Tabung dan kerucut":()=>{
+  const k=rnd(1,2),r=7*k,m=rnd(1,4),t=3*m,Vt=462*k*k*m,Vk=154*k*k*m,d=Vt-Vk;
+  return {...build(d,[Vk,Vt,Math.round(Vt/2),Vt+Vk],154,cm3),q:`Sebuah kerucut berada tepat di dalam tabung. Keduanya berjari-jari ${r} cm dan tinggi ${t} cm. Gunakan π = 22/7. Volume ruang di dalam tabung di luar kerucut adalah ...`,
+  why:`Volume tabung = ${Vt} cm³. Volume kerucut = 1/3 × ${Vt} = ${Vk} cm³. Selisih = ${d} cm³.`};
+},
+"Cat bak kubus":()=>{
+  const s=rnd(2,6),h=rnd(2,8)*5000,c=5*s*s*h;
+  return {...build(c,[6*s*s*h,4*s*s*h,s**3*h,5*s*h],5000,rp),q:`Sebuah bak berbentuk kubus tanpa tutup dengan rusuk ${s} m. Seluruh permukaan luarnya dicat dengan biaya ${rp(h)} per m². Total biaya pengecatan adalah ...`,
+  why:`Tanpa tutup berarti 5 sisi. Luas = 5 × ${s}² = ${5*s*s} m². Biaya = ${5*s*s} × ${rp(h)} = ${rp(c)}.`};
+},
+"Pembesaran bola":()=>{
+  const k=pick([2,3,4]);
+  return {...build(k**3,[k,k*k,2*k,3*k],1,n=>n+" kali"),q:`Jari-jari sebuah bola diperbesar menjadi ${k} kali semula. Volume bola menjadi ... kali semula.`,
+  why:`Volume bola sebanding dengan r³. ${k}³ = ${k**3} kali.`};
+},
+"Balok jadi kubus kecil":()=>{
+  const s=pick([2,3,4]),a=rnd(2,5),b=rnd(2,5),c=rnd(2,5),n=a*b*c;
+  return {...build(n,[a+b+c,a*b+c,2*n,n-a],a,x=>x+" buah"),q:`Sebuah balok berukuran ${a*s} cm × ${b*s} cm × ${c*s} cm dipotong menjadi kubus kecil berusuk ${s} cm tanpa sisa. Banyak kubus kecil adalah ...`,
+  why:`Sepanjang rusuk muat ${a}, ${b}, dan ${c} kubus. Banyak = ${a} × ${b} × ${c} = ${n} buah.`};
+}});
+const POOL2=Object.keys(G).filter(k=>!POOL1.includes(k));
+
+const cur=[null,null];
+let right=0,total=0;
+const L="ABCDE";
+function render(i,avoid){
+  const el=document.getElementById("s"+i);
+  const topic=pick(i?POOL2:POOL1);cur[i]=topic;
+  const p=G[topic]();
+  el.className="card";
+  el.innerHTML=`<div class="sub" style="margin:0 0 6px">Soal ${i+1} · Level ${i+1}</div><p class="q"></p><div class="os"></div><div class="why"></div><div class="row"><button class="btn alt">Soal baru</button></div>`;
+  el.querySelector(".q").textContent=p.q;
+  const os=el.querySelector(".os"),why=el.querySelector(".why");
+  p.opts.forEach((t,j)=>{
+    const b=document.createElement("button");b.className="opt";b.textContent=L[j]+". "+t;
+    b.onclick=()=>{
+      os.querySelectorAll(".opt").forEach((x,k)=>{x.disabled=true;if(k===p.ans)x.classList.add("ok")});
+      if(j!==p.ans)b.classList.add("no");
+      total++;if(j===p.ans)right++;
+      document.getElementById("score").textContent=`Benar ${right} dari ${total}`;
+      why.style.display="block";why.textContent=`Topik: ${topic}. Pembahasan: ${p.why}`;
+    };
+    os.appendChild(b);
+  });
+  el.querySelector(".btn").onclick=()=>render(i,cur[1-i]);
+}
+function both(){render(0,null);render(1,cur[0])}
+document.getElementById("all").onclick=both;
+both();
+</script>
+</body>
+</html>
